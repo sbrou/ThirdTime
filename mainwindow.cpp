@@ -62,6 +62,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::LoadConfiguration()
 {
     bool newDay = true;
+    bool errorReading = false;
 
 
     QFile configFile(".thirdtime");
@@ -71,9 +72,9 @@ void MainWindow::LoadConfiguration()
 
         QXmlStreamReader stream(&configFile);
 
-        while (!stream.atEnd())
+        if (stream.readNextStartElement()) // ROOT
         {
-            if (stream.readNextStartElement())
+            while (stream.readNextStartElement())
             {
                 if (stream.name().toString() == "lastlaunch")
                 {
@@ -85,32 +86,29 @@ void MainWindow::LoadConfiguration()
                             QDate lastDate = QDate::fromString(dateText);
                             if (lastDate == QDate::currentDate())
                                     newDay = false;
-
-                            break;
                         }
                     }
-                    stream.skipCurrentElement();
-                    break;
+                }
+                else if (!newDay && stream.name().toString() == "lastsession")
+                {
+                    _timer->Load(stream);
                 }
             }
         }
 
-
-        if (!newDay)
+        if (stream.hasError())
         {
-            _timer->Load(stream);
-            if (stream.hasError())
-            {
-                QMessageBox::critical(this, "Reading Error", stream.errorString());
-                return;
-            }
-            return;
+            QMessageBox::critical(this, "Reading Error", stream.errorString());
+            errorReading = true;
         }
     }
 
-    ui->lbreakLabel->setText("New day !");
-    ui->lBreakBalance->clear();
-    ui->lSessionTime->clear();
+    if (newDay || errorReading)
+    {
+        ui->lbreakLabel->setText("New day !");
+        ui->lBreakBalance->clear();
+        ui->lSessionTime->clear();
+    }
 }
 
 void MainWindow::SaveConfiguration()
@@ -122,12 +120,15 @@ void MainWindow::SaveConfiguration()
     stream.setAutoFormatting(true);
     stream.writeStartDocument();
 
+    stream.writeStartElement("ROOT");
+
     stream.writeStartElement("lastlaunch");
     stream.writeTextElement("date", QDate::currentDate().toString());
     stream.writeEndElement(); // lastlaunch
 
     _timer->Save(stream);
 
+    stream.writeEndElement(); // ROOT
     stream.writeEndDocument();
     configFile.close();
 }

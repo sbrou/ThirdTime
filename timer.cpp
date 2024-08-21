@@ -75,28 +75,19 @@ void Timer::Save(QXmlStreamWriter &stream) const
 
 void Timer::Load(QXmlStreamReader &stream)
 {
-    while (!stream.atEnd())
+    while (stream.readNextStartElement())
     {
-        if (stream.readNextStartElement())
+        if (stream.name().toString() == "start")
         {
-            if (stream.name().toString() == "lastsession")
-            {
-                while (stream.readNextStartElement())
-                {
-                    if (stream.name().toString() == "start")
-                    {
-                        _sessionStart = QTime::fromString(stream.readElementText());
-                    }
-                    if (stream.name().toString() == "breakDurationMin")
-                    {
-                        _breakDurationMin = stream.readElementText().toInt();
-                    }
-                    if (stream.name().toString() == "breakBalance")
-                    {
-                        _breakBalance = stream.readElementText().toInt();
-                    }
-                }
-            }
+            _sessionStart = QTime::fromString(stream.readElementText());
+        }
+        if (stream.name().toString() == "breakDurationMin")
+        {
+            _breakDurationMin = stream.readElementText().toInt();
+        }
+        if (stream.name().toString() == "breakBalance")
+        {
+            _breakBalance = stream.readElementText().toInt();
         }
     }
 }
