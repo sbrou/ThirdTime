@@ -5,6 +5,9 @@
 
 Timer::Timer() : QObject(), _breakBalance(0)
 {
+    _params.numerator = 1;
+    _params.denominator = 3;
+    _params.afternoonStart = QTime(13, 00, 00);
 }
 
 void Timer::StartTimer(bool start)
@@ -12,7 +15,7 @@ void Timer::StartTimer(bool start)
     if (start)
     {
         QTime startTime = QTime::currentTime();
-        if (_sessionStart <= QTime(13, 00, 00) && startTime >= QTime(13, 00, 00))
+        if (_sessionStart <= _params.afternoonStart && startTime >= _params.afternoonStart)
             _breakBalance = 0;
 
         int breakDuration = BreakDuration();
@@ -62,7 +65,7 @@ int Timer::BreakDuration() const
     if (_sessionEnd.isNull())
         return -1;
 
-    return (_sessionStart.secsTo(_sessionEnd) / 60) / 4;
+    return (_sessionStart.secsTo(_sessionEnd) * (_params.numerator / _params.denominator)) / 60;
 }
 
 QTime Timer::EndOfBreak() const

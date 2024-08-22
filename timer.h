@@ -6,6 +6,13 @@
 #include <QXmlStreamWriter>
 #include <QXmlStreamReader>
 
+struct Parameters
+{
+    int numerator;
+    int denominator;
+    QTime afternoonStart;
+};
+
 class Timer : public QObject
 {
     Q_OBJECT
@@ -29,6 +36,8 @@ private:
     QTime _sessionStart;
     QTime _sessionEnd;
     int _breakBalance;
+
+    static Parameters _params;
 };
 
 #endif // TIMER_H

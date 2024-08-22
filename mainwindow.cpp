@@ -7,6 +7,8 @@
 #include <QDate>
 #include <QMessageBox>
 
+#include "config.h"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -16,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
     LoadSessionState();
 
     connect(ui->pbStartStop, SIGNAL(toggled(bool)), this, SLOT(StartTimer(bool)));
+    connect(ui->pbConfig, SIGNAL(clicked()), this, SLOT(EditParameters()));
 }
 
 MainWindow::~MainWindow()
@@ -106,6 +109,11 @@ void MainWindow::SaveSessionState()
     stream.writeEndElement(); // ROOT
     stream.writeEndDocument();
     configFile.close();
+}
+
+void MainWindow::EditParameters()
+{
+    ConfigDialog
 }
 
 void MainWindow::ResetWindow()

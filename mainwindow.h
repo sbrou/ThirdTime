@@ -28,6 +28,8 @@ protected:
     void LoadSessionState();
     void SaveSessionState();
 
+    void EditParameters();
+
     void ResetWindow();
     void UpdateWindow();
 
