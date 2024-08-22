@@ -12,20 +12,22 @@ class Timer : public QObject
 public:
     Timer();
 
-    int breakDurationMin() const;
-    QTime endOfBreak() const;
+    int BreakDuration() const;
+    QTime EndOfBreak() const;
+    int BreakBalance() const;
+    bool InFocusMode() const;
+    const QTime &SessionStartTime() const;
+    const QTime &SessionStopTime() const;
 
-    void Save(QXmlStreamWriter & stream) const;
-    void Load(QXmlStreamReader & stream);
-
-    int breakBalance() const;
+    void Save(QXmlStreamWriter &stream) const;
+    void Load(QXmlStreamReader &stream);
 
 public slots:
-    QTime StartTimer(bool start);
+    void StartTimer(bool start);
 
 private:
     QTime _sessionStart;
-    int _breakDurationMin;
+    QTime _sessionEnd;
     int _breakBalance;
 };
 

@@ -3,73 +3,88 @@
 #include <QFile>
 #include <QDate>
 
-Timer::Timer() : QObject()
-               , _breakDurationMin(-1)
-               , _breakBalance(0)
+Timer::Timer() : QObject(), _breakBalance(0)
 {
 }
 
-QTime Timer::StartTimer(bool start)
+void Timer::StartTimer(bool start)
 {
     if (start)
     {
         QTime startTime = QTime::currentTime();
-        if (startTime >= QTime(13, 00, 00))
+        if (_sessionStart <= QTime(13, 00, 00) && startTime >= QTime(13, 00, 00))
             _breakBalance = 0;
 
-        if (_breakDurationMin > 0)
+        int breakDuration = BreakDuration();
+        if (breakDuration > 0)
         {
-            QTime theoricalEndOfBreak = _sessionStart.addSecs(_breakDurationMin * 60);
-            _breakBalance += (theoricalEndOfBreak.secsTo(startTime) / 60);
+            QTime theoricalEndOfBreak = _sessionEnd.addSecs(breakDuration * 60);
+            _breakBalance += (startTime.secsTo(theoricalEndOfBreak) / 60);
         }
 
         _sessionStart = startTime;
-        _breakDurationMin = -1;
-
-        return startTime;
+        _sessionEnd = QTime();
     }
     else
     {
-        QTime endTime = QTime::currentTime();
-        int breakDurationSecs = -endTime.secsTo(_sessionStart) / 4;
-        _breakDurationMin = breakDurationSecs; // / 60;
+        _sessionEnd = QTime::currentTime();
 
         QFile logFile("ThirdTime.log");
         logFile.open(QIODevice::WriteOnly | QIODevice::Append);
         QTextStream out(&logFile);
-        out << _sessionStart.toString() << " - " << endTime.toString() << "\n";
+        out << _sessionStart.toString() << " - " << _sessionEnd.toString() << "\n";
         logFile.close();
-
-        return endTime;
     }
 }
 
-int Timer::breakBalance() const
+const QTime &Timer::SessionStartTime() const
+{
+    return _sessionStart;
+}
+
+const QTime &Timer::SessionStopTime() const
+{
+    return _sessionEnd;
+}
+
+int Timer::BreakBalance() const
 {
     return _breakBalance;
 }
 
-int Timer::breakDurationMin() const
+bool Timer::InFocusMode() const
 {
-    return _breakDurationMin;
+    return _sessionEnd.isNull();
 }
 
-QTime Timer::endOfBreak() const
+int Timer::BreakDuration() const
 {
-    return _breakDurationMin > 0 ? _sessionStart.addSecs(_breakDurationMin * 60) : QTime();
+    if (_sessionEnd.isNull())
+        return -1;
+
+    return (_sessionStart.secsTo(_sessionEnd) / 60) / 4;
+}
+
+QTime Timer::EndOfBreak() const
+{
+    int breakDuration = BreakDuration();
+    return breakDuration > 0 ? _sessionEnd.addSecs(breakDuration * 60) : QTime();
 }
 
 void Timer::Save(QXmlStreamWriter &stream) const
 {
     stream.writeStartElement("lastsession");
-    stream.writeAttribute("state", _breakDurationMin > 0 ? "break" : "focus");
     if (_sessionStart.isValid())
         stream.writeTextElement("start", _sessionStart.toString());
     else
         stream.writeEmptyElement("start");
 
-    stream.writeTextElement("breakDurationMin", QString::number(_breakDurationMin));
-    stream.writeTextElement("breakBalance", QString::number(_breakBalance));
+    if (_sessionEnd.isValid())
+        stream.writeTextElement("stop", _sessionEnd.toString());
+    else
+        stream.writeEmptyElement("stop");
+
+    stream.writeTextElement("breakbalance", QString::number(_breakBalance));
     stream.writeEndElement();
 }
 
@@ -81,11 +96,11 @@ void Timer::Load(QXmlStreamReader &stream)
         {
             _sessionStart = QTime::fromString(stream.readElementText());
         }
-        if (stream.name().toString() == "breakDurationMin")
+        if (stream.name().toString() == "stop")
         {
-            _breakDurationMin = stream.readElementText().toInt();
+            _sessionEnd = QTime::fromString(stream.readElementText());
         }
-        if (stream.name().toString() == "breakBalance")
+        if (stream.name().toString() == "breakbalance")
         {
             _breakBalance = stream.readElementText().toInt();
         }
